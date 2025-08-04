@@ -1,0 +1,22 @@
+# OS
+.DS_Store
+
+# User specific
+.envrc
+
+# esp-idf
+.cache
+build
+dependencies.lock
+managed_components/
+sdkconfig
+sdkconfig.old
+
+# Factory firmware
+factory/
+out/
+
+# Logs and dumps
+*.core
+*.dmp
+*.log
