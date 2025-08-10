@@ -6,6 +6,7 @@ A clean ESP-IDF project template with pre-configured development tools and build
 
 - Pre-configured development tools (clang-format, clang-tidy, clangd)
 - Google C++ style guide compliance
+- C++20 support enabled by default
 - Matter support (commented, ready to uncomment)
 - RISC-V compatibility settings
 - Optimized build settings (`-Os`)
@@ -30,19 +31,11 @@ For build, flash, and monitor instructions refer to ESP-IDF documentation.
 
 ### C++ Support
 
-To enable C++20 support:
-
-1. Uncomment in `CMakeLists.txt`:
-   ```cmake
-   idf_build_set_property(
-       CXX_COMPILE_OPTIONS "-std=gnu++20;-Os;-Wno-overloaded-virtual" APPEND)
-   ```
-
-2. Uncomment in `.clangd`:
-   ```yaml
-   Add:
-     - -std=gnu++20
-   ```
+C++20 support is enabled by default. The project is configured with:
+- C++20 standard (`-std=gnu++20`)
+- Size optimization (`-Os`)
+- Disabled overloaded virtual warnings (`-Wno-overloaded-virtual`)
+- clangd integration for C++ files
 
 ### Matter/Thread Support
 

@@ -1,14 +1,20 @@
 CompileFlags:
-#  Uncomment to use C++
-#  Add:
-#    - -std=gnu++20
   Remove:
     - -mlong-calls
     - -mlongcalls
     - -fno-shrink-wrap
     - -fno-tree-switch-conversion
     - -fstrict-volatile-bitfields
+
 Diagnostics:
   Suppress:
     - pp_file_not_found
     - drv_unknown_argument
+
+---
+
+If:
+  PathMatch: .*\.cpp$
+CompileFlags:
+  Add:
+    - -std=gnu++20

@@ -19,9 +19,8 @@ include($ENV{IDF_PATH}/tools/cmake/project.cmake)
 
 project(esp-idf-project)
 
-# Uncomment to use C++
-# idf_build_set_property(
-#     CXX_COMPILE_OPTIONS "-std=gnu++20;-Os;-Wno-overloaded-virtual" APPEND)
+idf_build_set_property(
+    CXX_COMPILE_OPTIONS "-std=gnu++20;-Os;-Wno-overloaded-virtual" APPEND)
 
 # Uncomment to use Matter
 # idf_build_set_property(CXX_COMPILE_OPTIONS "-DCHIP_HAVE_CONFIG_H" APPEND)
