@@ -1,7 +1,11 @@
 CompileFlags:
+  Add:
+    - "-DIRAM_ATTR="
+    - "-DESP_PLATFORM"
   Remove:
     - -mlong-calls
     - -mlongcalls
+    - -march=*
     - -fno-shrink-wrap
     - -fno-tree-switch-conversion
     - -fstrict-volatile-bitfields

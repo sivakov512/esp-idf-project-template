@@ -1,40 +1,29 @@
----
-BasedOnStyle: Google
+# Based on LLVM style (closer to embedded/IDF conventions, without extra Google overrides)
+BasedOnStyle: LLVM
 
-# We keep 2-space indentation, 100-column limit, attached braces, etc.
+# Basic indentation and column settings
 IndentWidth: 2
 TabWidth: 2
 UseTab: Never
 ColumnLimit: 100
+
+# Braces and indentation
 BreakBeforeBraces: Attach
-
-# Keep namespaces unindented in Google style.
 NamespaceIndentation: None
-
-# Google style typically aligns access specifiers (public, private, etc.)
 AccessModifierOffset: -2
 
-# Avoid single-line if/else, loops, and function bodies in Google style.
+# Short statements and functions
 AllowShortIfStatementsOnASingleLine: false
 AllowShortLoopsOnASingleLine: false
 AllowShortFunctionsOnASingleLine: Empty
 
-# No spaces inside parentheses or angle brackets.
+# Spaces and penalties
 SpacesInParentheses: false
 SpacesInAngles: false
-
-# Some additional fine-tuning.
 SpaceAfterCStyleCast: true
 SpaceBeforeAssignmentOperators: true
 PenaltyReturnTypeOnItsOwnLine: 200
 
-# -- Include sorting settings --
-#
-# SortIncludes: true -> clang-format will sort #includes.
-# IncludeBlocks: Preserve -> clang-format will NOT merge or split #include
-# blocks, but will reorder includes *within* each block. That way you can have
-# separate blocks for system headers, library headers, local headers, etc., and
-# clang-format won't reorder across those blank-line boundaries.
-
+# Include sorting
 SortIncludes: true
 IncludeBlocks: Preserve
