@@ -27,17 +27,24 @@ CheckOptions:
   # C++ classes / interfaces
   - key: readability-identifier-naming.ClassCase
     value: CamelCase
+
   # Class constants (static constexpr)
   - key: readability-identifier-naming.ClassConstantCase
     value: CamelCase
   - key: readability-identifier-naming.ClassConstantPrefix
     value: "k"
 
-  # Members (C++ data fields)
-  - key: readability-identifier-naming.MemberCase
+  # Members (C++ classes)
+  - key: readability-identifier-naming.ClassMemberCase
     value: lower_case
-  - key: readability-identifier-naming.MemberSuffix
+  - key: readability-identifier-naming.ClassMemberSuffix
     value: "_"
+  - key: readability-identifier-naming.MemberCase@C++
+    value: lower_case
+  - key: readability-identifier-naming.MemberSuffix@C++
+    value: "_"
+  - key: readability-identifier-naming.PrivateMemberCase
+    value: lower_case
   - key: readability-identifier-naming.PrivateMemberSuffix
     value: "_"
 
@@ -65,15 +72,19 @@ CheckOptions:
   - key: readability-identifier-naming.GlobalVariableIgnoredRegexp
     value: "TAG|IRAM_ATTR"
 
-  # C structs / typedefs
-  - key: readability-identifier-naming.StructCase
+  # structs / typedefs
+  - key: readability-identifier-naming.StructCase@C
     value: lower_case
-  - key: readability-identifier-naming.StructSuffix
+  - key: readability-identifier-naming.StructSuffix@C
     value: "_t"
+  - key: readability-identifier-naming.StructCase@C++
+    value: CamelCase
   - key: readability-identifier-naming.TypedefCase
     value: lower_case
   - key: readability-identifier-naming.TypedefSuffix
     value: "_t"
+  - key: readability-identifier-naming.MemberCase@C
+    value: lower_case
 
   # C++ type aliases (using)
   - key: readability-identifier-naming.TypeAliasCase
