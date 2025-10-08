@@ -1,0 +1,26 @@
+name: Formatting
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+env:
+  LLVM_VERSION: "17"
+
+jobs:
+  formatting:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install LLVM ${{ env.LLVM_VERSION }}
+        uses: KyleMayes/install-llvm-action@v2
+        with:
+          version: ${{ env.LLVM_VERSION }}
+          directory: ${{ runner.temp }}/llvm
+
+      - name: Check code formatting
+        run: make check-format

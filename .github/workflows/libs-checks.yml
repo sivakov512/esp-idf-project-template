@@ -1,0 +1,63 @@
+name: Libs Checks
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+env:
+  LLVM_VERSION: "17"
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake build-essential
+
+      - name: Cache build artifacts
+        uses: actions/cache@v3
+        with:
+          path: libs/unity/build
+          key: ${{ runner.os }}-cmake-${{ hashFiles('libs/unity/CMakeLists.txt', 'libs/*/CMakeLists.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-cmake-
+
+      - name: Run tests
+        run: make libs-test
+
+  lint:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake build-essential
+
+      - name: Install LLVM ${{ env.LLVM_VERSION }}
+        uses: KyleMayes/install-llvm-action@v2
+        with:
+          version: ${{ env.LLVM_VERSION }}
+          directory: ${{ runner.temp }}/llvm
+
+      - name: Cache build artifacts
+        uses: actions/cache@v3
+        with:
+          path: libs/unity/build
+          key: ${{ runner.os }}-cmake-${{ hashFiles('libs/unity/CMakeLists.txt', 'libs/*/CMakeLists.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-cmake-
+
+      - name: Run static analysis
+        run: make libs-lint
