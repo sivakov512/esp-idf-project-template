@@ -11,6 +11,10 @@ cmake_minimum_required(VERSION 3.16)
 
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)
 
+# Path to directory with clean esp-independent libraries
+set(EXT_LIBS_DIR "${CMAKE_CURRENT_LIST_DIR}/libs")
+
+
 # Uncomment to use Matter
 # set(EXTRA_COMPONENT_DIRS
 #     "${MATTER_SDK_PATH}/config/esp32/components"
