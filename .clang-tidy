@@ -57,6 +57,8 @@ CheckOptions:
   # Free/namespace functions (C/C++)
   - key: readability-identifier-naming.FunctionCase
     value: lower_case
+  - key: readability-identifier-naming.FunctionIgnoredRegexp
+    value: '^(setUp|tearDown)$'
 
   # Parameters / locals
   - key: readability-identifier-naming.ParameterCase
