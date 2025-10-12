@@ -9,6 +9,7 @@ CompileFlags:
     - -fno-shrink-wrap
     - -fno-tree-switch-conversion
     - -fstrict-volatile-bitfields
+    - -mcpu=*
 
 Diagnostics:
   Suppress:

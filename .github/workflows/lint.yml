@@ -1,0 +1,49 @@
+name: Lint
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/sivakov512/esp-idf:5.5-llvm17
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Init ESP-IDF envirornment
+        run: |
+          cat > "$GITHUB_WORKSPACE/.bash_env_ci" <<'EOF'
+          # guard to avoid re-sourcing on every nested bash
+          if [ -z "${__ESP_IDF_SOURCED__:-}" ]; then
+            export __ESP_IDF_SOURCED__=1
+            source /opt/esp/entrypoint.sh
+          fi
+          EOF
+          echo "BASH_ENV=$GITHUB_WORKSPACE/.bash_env_ci" >> "$GITHUB_ENV"
+
+      - name: Cache build artefacts
+        uses: actions/cache@v3
+        with:
+          path: |
+            build
+            managed_components
+          key: ${{ runner.os }}-lint-${{ hashFiles('**/CMakeLists.txt', 'sdkconfig.defaults', 'main/idf_component.yml') }}
+          restore-keys: |
+            ${{ runner.os }}-lint-
+
+      - name: Build project
+        run: make build
+
+      - name: Run static analysis
+        run: make lint

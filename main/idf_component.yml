@@ -1,0 +1,4 @@
+dependencies:
+  embedlibs:
+    git: https://github.com/sivakov512/embedlibs.git
+    version: "v1.0.0"

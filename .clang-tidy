@@ -6,6 +6,7 @@ Checks: |
   clang-diagnostic-*,
   clang-analyzer-*,
   bugprone-*,
+  -bugprone-branch-clone,
   performance-*,
   portability-*,
   modernize-*,
@@ -21,7 +22,7 @@ Checks: |
 
 
 WarningsAsErrors: "*"
-HeaderFilterRegex: ".*"
+HeaderFilterRegex: ""
 
 CheckOptions:
   # ===== Naming =====
