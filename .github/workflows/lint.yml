@@ -10,7 +10,7 @@ jobs:
   lint:
     runs-on: ubuntu-latest
     container:
-      image: ghcr.io/sivakov512/esp-idf:5.5-llvm17
+      image: ghcr.io/sivakov512/esp-idf:5.5-llvm19
     defaults:
       run:
         shell: bash
