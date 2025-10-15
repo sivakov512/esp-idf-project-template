@@ -6,6 +6,19 @@ CLANG_FORMAT ?= clang-format
 BUILD_DIR := build
 TIDY_DB_DIR := $(BUILD_DIR)/tidy
 
+HOST_TESTS_DIR := tests/host
+HOST_TESTS_BUILD_DIR := $(HOST_TESTS_DIR)/build
+
+host-tests-build:
+	cmake -S ${HOST_TESTS_DIR} -B ${HOST_TESTS_BUILD_DIR} -DCMAKE_BUILD_TYPE=Debug
+	cmake --build ${HOST_TESTS_BUILD_DIR} -j
+
+host-tests: host-tests-build
+	ctest --test-dir ${HOST_TESTS_BUILD_DIR} --output-on-failure -V
+
+host-tests-clean:
+	rm -rf ${HOST_TESTS_BUILD_DIR}
+
 _check-jq:
 	@command -v jq >/dev/null || { echo "ERROR: jq not found. Install jq."; exit 1; }
 
