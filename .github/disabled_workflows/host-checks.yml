@@ -6,58 +6,43 @@ on:
   pull_request:
     branches: [master]
 
-env:
-  LLVM_VERSION: "19"
-
 jobs:
   test:
     runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/sivakov512/llvm:19
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Install dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y cmake build-essential
-
       - name: Cache build artifacts
         uses: actions/cache@v3
         with:
           path: tests/host/build
-          key: ${{ runner.os }}-cmake-${{ hashFiles('tests/host/CMakeLists.txt', 'CMakeLists.txt') }}
+          key: ${{ runner.os }}-host-checks-${{ hashFiles('tests/host/CMakeLists.txt', 'CMakeLists.txt') }}
           restore-keys: |
-            ${{ runner.os }}-cmake-
+            ${{ runner.os }}-host-checks-
 
       - name: Run tests
         run: make host-test
 
   lint:
     runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/sivakov512/llvm:19
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Install dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y cmake build-essential
-
-      - name: Install LLVM ${{ env.LLVM_VERSION }}
-        uses: KyleMayes/install-llvm-action@v2
-        with:
-          version: ${{ env.LLVM_VERSION }}
-          directory: ${{ runner.temp }}/llvm
-
       - name: Cache build artifacts
         uses: actions/cache@v3
         with:
           path: tests/host/build
-          key: ${{ runner.os }}-cmake-${{ hashFiles('tests/host/CMakeLists.txt', 'CMakeLists.txt') }}
+          key: ${{ runner.os }}-host-checks-${{ hashFiles('tests/host/CMakeLists.txt', 'CMakeLists.txt') }}
           restore-keys: |
-            ${{ runner.os }}-cmake-
+            ${{ runner.os }}-host-checks-
 
       - name: Run static analysis
         run: make host-lint

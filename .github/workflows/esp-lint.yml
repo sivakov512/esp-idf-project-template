@@ -38,9 +38,9 @@ jobs:
           path: |
             build
             managed_components
-          key: ${{ runner.os }}-lint-${{ hashFiles('**/CMakeLists.txt', 'sdkconfig.defaults', 'main/idf_component.yml') }}
+          key: ${{ runner.os }}-esp-lint-${{ hashFiles('**/CMakeLists.txt', 'sdkconfig.defaults', 'main/idf_component.yml') }}
           restore-keys: |
-            ${{ runner.os }}-lint-
+            ${{ runner.os }}-esp-lint-
 
       - name: Build project
         run: make esp-build
