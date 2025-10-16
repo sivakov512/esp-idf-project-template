@@ -22,15 +22,14 @@ if(NOT TARGET unity)
     target_include_directories(unity PUBLIC ${Unity_SOURCE_DIR}/src)
 endif()
 
-enable_testing()
+FetchContent_Declare(
+    embedlibs
+    GIT_REPOSITORY https://github.com/sivakov512/embedlibs.git
+    GIT_TAG        v1.0.0
+)
+FetchContent_MakeAvailable(embedlibs)
 
-set(MANAGED_COMPONENTS embedlibs)
-foreach(DEP ${MANAGED_COMPONENTS})
-    add_subdirectory(
-        ${ROOT_DIR}/managed_components/${DEP}
-        ${CMAKE_BINARY_DIR}/managed_components/${DEP}
-    )
-endforeach()
+enable_testing()
 
 # Add components compatible for host testing here
 # Before adding library here, create directory named tests inside and write
