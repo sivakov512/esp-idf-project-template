@@ -20,7 +20,7 @@ jobs:
         uses: actions/cache@v3
         with:
           path: tests/host/build
-          key: ${{ runner.os }}-host-checks-${{ hashFiles('tests/host/CMakeLists.txt', 'CMakeLists.txt') }}
+          key: ${{ runner.os }}-host-checks-${{ hashFiles('tests/host/CMakeLists.txt', 'components/**/CMakeLists.txt') }}
           restore-keys: |
             ${{ runner.os }}-host-checks-
 
@@ -40,7 +40,7 @@ jobs:
         uses: actions/cache@v3
         with:
           path: tests/host/build
-          key: ${{ runner.os }}-host-checks-${{ hashFiles('tests/host/CMakeLists.txt', 'CMakeLists.txt') }}
+          key: ${{ runner.os }}-host-checks-${{ hashFiles('tests/host/CMakeLists.txt', 'components/**/CMakeLists.txt') }}
           restore-keys: |
             ${{ runner.os }}-host-checks-
 
