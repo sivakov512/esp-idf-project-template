@@ -1,4 +1,4 @@
-name: Lint
+name: ESP Lint
 
 on:
   push:
@@ -43,7 +43,7 @@ jobs:
             ${{ runner.os }}-lint-
 
       - name: Build project
-        run: make build
+        run: make esp-build
 
       - name: Run static analysis
-        run: make lint
+        run: make esp-lint
