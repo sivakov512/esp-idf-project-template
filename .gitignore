@@ -6,6 +6,7 @@
 
 # esp-idf
 .cache
+__cmake_systeminformation
 build
 dependencies.lock
 managed_components/
