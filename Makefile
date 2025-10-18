@@ -1,4 +1,5 @@
 CLANG_TIDY ?= clang-tidy
+CLANG_TIDY_EXTRAS :=
 CLANG_FORMAT ?= clang-format
 
 BUILD_DIR := build
@@ -7,6 +8,19 @@ TIDY_DB_DIR := $(BUILD_DIR)/tidy
 HOST_TESTS_DIR := tests/host
 HOST_TESTS_BUILD_DIR := $(HOST_TESTS_DIR)/build
 HOST_LINT_LIBS :=
+
+UNAME_S := $(shell uname -s)
+
+ifeq ($(UNAME_S),Darwin)
+# Add path to SDK on MacOS
+  XCRUN := $(shell command -v xcrun 2>/dev/null)
+  ifneq ($(XCRUN),)
+    SDK := $(shell xcrun --show-sdk-path 2>/dev/null)
+    ifneq ($(SDK),)
+      CLANG_TIDY_EXTRAS += --extra-arg=-isysroot$(SDK)
+    endif
+  endif
+endif
 
 # Utils
 quote = $(foreach d,$(1),"$(d)")
@@ -45,7 +59,7 @@ ifneq ($(strip $(HOST_LINT_LIBS)),)
        	-o \
 	    \( -type f \( -name '*.c' -o -name '*.cpp' -o -name '*.h' -o -name '*.hpp' \) \
 		-print0 \) \
-	| xargs -0 $(CLANG_TIDY) -p "$(HOST_TESTS_BUILD_DIR)"
+	| xargs -0 $(CLANG_TIDY) $(CLANG_TIDY_EXTRAS) -p "$(HOST_TESTS_BUILD_DIR)"
 else
 	@echo "HOST_LINT_LIBS is empty, skipping host-lint"
 endif
