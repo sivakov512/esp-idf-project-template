@@ -4,6 +4,7 @@ idf_component_register(
     INCLUDE_DIRS "."
     REQUIRES
         "embedlibs"
+        "slog"
     PRIV_REQUIRES
         "app"
 )
