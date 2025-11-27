@@ -2,3 +2,6 @@ dependencies:
   embedlibs:
     git: https://github.com/sivakov512/embedlibs.git
     version: "v1.2.1"
+  slog:
+    git: https://github.com/sivakov512/slog.git
+    version: "v0.0.0"
