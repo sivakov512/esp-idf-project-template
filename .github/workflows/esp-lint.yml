@@ -9,13 +9,22 @@ on:
 jobs:
   lint:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        container:
+          - ghcr.io/sivakov512/esp-idf:5.5-llvm19
     container:
-      image: ghcr.io/sivakov512/esp-idf:5.5-llvm19
+      image: ${{ matrix.container }}
     defaults:
       run:
         shell: bash
 
     steps:
+      - name: Get container image digest
+        run: |
+          curl -fsSL https://github.com/google/go-containerregistry/releases/latest/download/go-containerregistry_Linux_x86_64.tar.gz | tar -xz crane
+          echo "DIGEST=$(./crane digest ${{ matrix.container }})" >> $GITHUB_ENV
+
       - name: Checkout
         uses: actions/checkout@v4
         with:
@@ -38,9 +47,9 @@ jobs:
           path: |
             build
             managed_components
-          key: ${{ runner.os }}-esp-lint-${{ hashFiles('**/CMakeLists.txt', 'sdkconfig.defaults', 'main/idf_component.yml') }}
+          key: ${{ runner.os }}-${{ env.DIGEST }}-esp-lint-${{ hashFiles('**/CMakeLists.txt', 'sdkconfig.defaults', 'main/idf_component.yml') }}
           restore-keys: |
-            ${{ runner.os }}-esp-lint-
+            ${{ runner.os }}-${{ env.DIGEST }}-esp-lint-
 
       - name: Build project
         run: make esp-build
