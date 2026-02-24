@@ -1,13 +1,10 @@
 #include "app.h"
 #include <slog.h>
-#include <slog/platform/esp.h>
 #include <stdint.h>
 
-#define TAG "main"
+SLOG_REGISTER("main");
 
 void app_main() {
-  slog_esp_init();
-
   SLOGI("Initializing app...");
   esp_err_t err = app_init();
   if (err != ESP_OK) {
