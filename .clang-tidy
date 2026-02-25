@@ -5,20 +5,23 @@ Checks: |
   -*,
   clang-diagnostic-*,
   clang-analyzer-*,
+  -clang-analyzer-security.insecureAPI.DeprecatedOrUnsafeBufferHandling,
   bugprone-*,
   -bugprone-branch-clone,
+  -bugprone-easily-swappable-parameters,
   performance-*,
   portability-*,
   modernize-*,
+  -modernize-macro-to-enum,
+  -modernize-use-trailing-return-type,
   readability-*,
   misc-*,
+  -misc-include-cleaner,
+  -misc-header-include-cycle,
   readability-identifier-naming,
   google-explicit-constructor,
   google-readability-braces-around-statements,
-  google-runtime-int,
-  -modernize-use-trailing-return-type,
-  -misc-include-cleaner,
-  -clang-analyzer-security.insecureAPI.DeprecatedOrUnsafeBufferHandling
+  google-runtime-int
 
 
 WarningsAsErrors: "*"
@@ -134,3 +137,7 @@ CheckOptions:
     value: "true"
   - key: performance-unnecessary-value-param.AllowedTypes
     value: "std::unique_ptr"
+  - key: readability-identifier-length.IgnoredVariableNames
+    value: "ms|ns|io|tx|rx|id|cb|fd|fn"
+  - key: readability-identifier-length.IgnoredParameterNames
+    value: "ms|ns|io|tx|rx|id|cb|fd|fn"

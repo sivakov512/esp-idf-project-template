@@ -5,7 +5,6 @@ A clean ESP-IDF project template with pre-configured development tools and build
 ## What's Included
 
 - Pre-configured development tools (clang-format, clang-tidy, clangd)
-- Google C++ style guide compliance
 - C++20 support enabled by default
 - Matter support (commented, ready to uncomment)
 - RISC-V compatibility settings
