@@ -1,52 +1,100 @@
 # ESP-IDF Project Template
 
-A clean ESP-IDF project template with pre-configured development tools and build settings.
+Minimal ESP-IDF project template with clean build defaults, clang tooling, and optional ESP-Matter support.
 
-## What's Included
+## Features
 
-- Pre-configured development tools (clang-format, clang-tidy, clangd)
-- C++20 support enabled by default
-- Matter support (commented, ready to uncomment)
-- RISC-V compatibility settings
-- Optimized build settings (`-Os`)
+- Clean ESP-IDF CMake setup
+- clang-format / clang-tidy / clangd integration
+- Size-optimized builds (`-Os`)
+- Optional ESP-Matter / connectedhomeip support
+- Matter components forced to GNU++17
+- RISC-V compatibility flags
 
-## Prerequisites & Resources
+---
 
-- [ESP-IDF](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/get-started/index.html) v5.4+ (tested on 5.4, may work on earlier versions)
-- [ESP-Matter](https://github.com/espressif/esp-matter) - for Matter/Thread support
-- [Google C++ Style Guide](https://google.github.io/styleguide/cppguide.html) - coding standards
-- [clang-format](https://clang.llvm.org/docs/ClangFormat.html), [clang-tidy](https://clang.llvm.org/extra/clang-tidy/), [clangd](https://clangd.llvm.org/) - development tools
+## Requirements
+
+- [ESP-IDF](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/get-started/index.html) v5.4+
+- [ESP-Matter](https://docs.espressif.com/projects/esp-matter/en/latest/esp32/developing.html#esp-matter-setup) (optional, for Matter / Thread)
+- clang-format / clang-tidy / clangd (recommended)
 
 ## Setup
 
-Change project name in `CMakeLists.txt`:
+Rename the project in `CMakeLists.txt`:
+
 ```cmake
 project(your-project-name)
 ```
 
-For build, flash, and monitor instructions refer to ESP-IDF documentation.
+Build and flash:
 
-## Configuration
-
-### C++ Support
-
-C++20 support is enabled by default. The project is configured with:
-- C++20 standard (`-std=gnu++20`)
-- Size optimization (`-Os`)
-- Disabled overloaded virtual warnings (`-Wno-overloaded-virtual`)
-- clangd integration for C++ files
-
-### Matter/Thread Support
-
-To enable Matter support:
-
-1. Set up ESP-Matter and export `ESP_MATTER_PATH`
-2. Uncomment all Matter-related sections in `CMakeLists.txt`
-
-### RISC-V Targets
-
-For ESP32-C3, ESP32-C6, etc., uncomment the RISC-V compiler flags in `CMakeLists.txt`:
-```cmake
-idf_build_set_property(
-    COMPILE_OPTIONS "-Wno-format-nonliteral;-Wno-format-security" APPEND)
+```bash
+idf.py build
+idf.py flash monitor
 ```
+
+## C++ Standard
+
+The template does not globally override the C++ standard.
+
+Your project code uses the default provided by ESP-IDF/toolchain
+(often shown as -std=gnu++2b, which is GNU C++23).
+
+When Matter is enabled:
+
+- Matter / CHIP components are compiled with -std=gnu++17
+- Warnings for upstream Matter code are disabled (-w)
+
+This avoids C++23 incompatibilities inside connectedhomeip while keeping your project on a modern standard.
+
+## Enabling Matter
+
+1. Set `ESP_MATTER_PATH`
+
+2. Enable in CMakeLists.txt:
+
+```cmake
+set(ESP_MATTER_ENABLED true)
+```
+
+3. Clean and rebuild:
+
+```bash
+idf.py fullclean
+idf.py build
+```
+
+## RISC-V Targets
+
+For RISC-V chips (ESP32-C3 / C6 / H2 / etc.) additional format-related warnings are disabled:
+
+```cmake
+if(IDF_TARGET_ARCH STREQUAL "riscv")
+    idf_build_set_property(
+        COMPILE_OPTIONS "-Wno-format-nonliteral;-Wno-format-security" APPEND)
+endif()
+```
+
+## Code Style
+
+Clang-tidy enforces:
+
+Naming
+
+- C: snake_case, structs/typedefs end with \_t
+- C++ types: CamelCase
+- Methods: snake_case
+- Class members: snake*case*
+- Enum values: UPPER_CASE
+- Class constants: kCamelCase
+- Macros and global constants: UPPER_CASE
+- Globals: g\_ prefix
+
+Rules
+
+- All warnings treated as errors
+- Analyzer, performance, modernize, readability checks enabled
+- Embedded-oriented exceptions configured where necessary
+
+See .clang-tidy for the full configuration.

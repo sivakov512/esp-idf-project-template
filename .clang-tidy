@@ -4,6 +4,7 @@
 Checks: |
   -*,
   clang-diagnostic-*,
+  -clang-diagnostic-unused-command-line-argument,
   clang-analyzer-*,
   -clang-analyzer-security.insecureAPI.DeprecatedOrUnsafeBufferHandling,
   bugprone-*,

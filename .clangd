@@ -17,9 +17,8 @@ Diagnostics:
     - drv_unknown_argument
 
 ---
-
 If:
   PathMatch: .*\.cpp$
 CompileFlags:
   Add:
-    - -std=gnu++20
+    - -std=gnu++23
