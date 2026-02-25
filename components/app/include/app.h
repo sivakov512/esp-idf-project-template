@@ -5,18 +5,10 @@
 
 EXTERN_C_BEGIN
 
-/**
- * Initialize application
- *
- * @return ESP_OK on successful initialization, error code on failure
- */
-esp_err_t app_init();
+typedef struct {
+} app_ctx_t;
 
-/**
- * Run application
- *
- * @return ESP_OK on successful run, error code on failure
- */
-esp_err_t app_run();
+esp_err_t app_init(app_ctx_t *ctx);
+esp_err_t app_run(app_ctx_t *ctx);
 
 EXTERN_C_END

@@ -3,8 +3,7 @@ idf_component_register(
         "main.c"
     INCLUDE_DIRS "."
     REQUIRES
+        "app"
         "embedlibs"
         "slog"
-    PRIV_REQUIRES
-        "app"
 )
