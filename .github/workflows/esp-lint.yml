@@ -6,15 +6,33 @@ on:
   pull_request:
     branches: [main]
 
+env:
+  IMAGE_DEFAULT: ghcr.io/sivakov512/esp-idf:v5.5.3-llvm19
+  IMAGE_MATTER: ghcr.io/sivakov512/esp-matter:release_v1.5-idf_v5.5.3-llvm19
+
 jobs:
-  lint:
+  detect:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        container:
-          - ghcr.io/sivakov512/esp-idf:5.5-llvm19
+    outputs:
+      container: ${{ steps.pick.outputs.container }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Pick container image
+        id: pick
+        run: |
+          if grep -qP 'set\(ESP_MATTER_ENABLED\s+true\)' CMakeLists.txt; then
+            echo "container=${{ env.IMAGE_MATTER }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "container=${{ env.IMAGE_DEFAULT }}" >> "$GITHUB_OUTPUT"
+          fi
+
+  lint:
+    needs: detect
+    runs-on: ubuntu-latest
     container:
-      image: ${{ matrix.container }}
+      image: ${{ needs.detect.outputs.container }}
     defaults:
       run:
         shell: bash
@@ -23,7 +41,7 @@ jobs:
       - name: Get container image digest
         run: |
           curl -fsSL https://github.com/google/go-containerregistry/releases/latest/download/go-containerregistry_Linux_x86_64.tar.gz | tar -xz crane
-          echo "DIGEST=$(./crane digest ${{ matrix.container }})" >> $GITHUB_ENV
+          echo "DIGEST=$(./crane digest ${{ needs.detect.outputs.container }})" >> $GITHUB_ENV
 
       - name: Checkout
         uses: actions/checkout@v4
