@@ -63,6 +63,7 @@ jobs:
         uses: actions/cache@v3
         with:
           path: |
+            .cache
             build
             managed_components
           key: ${{ runner.os }}-${{ env.DIGEST }}-esp-lint-${{ hashFiles('**/CMakeLists.txt', 'sdkconfig.defaults', 'main/idf_component.yml') }}
