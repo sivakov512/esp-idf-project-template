@@ -55,7 +55,8 @@ use-host:
 
 __HOST_TESTS_DIR := tests/host
 __HOST_TESTS_BUILD_DIR := $(__HOST_TESTS_DIR)/build
-HOST_LINT_LIBS :=
+HOST_LINT_LIBS ?= $(addprefix components/, \
+	$(shell tr '\n' ' ' < $(__HOST_TESTS_DIR)/CMakeLists.txt | sed -n 's/.*set(LIBS2TEST[[:space:]]*\([^)]*\)).*/\1/p' | xargs))
 
 host-build:
 	cmake -S ${__HOST_TESTS_DIR} -B ${__HOST_TESTS_BUILD_DIR} -DCMAKE_BUILD_TYPE=Debug
