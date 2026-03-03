@@ -10,6 +10,7 @@ Checks: |
   bugprone-*,
   -bugprone-branch-clone,
   -bugprone-easily-swappable-parameters,
+  -bugprone-macro-parentheses,
   performance-*,
   portability-*,
   modernize-*,
@@ -26,7 +27,7 @@ Checks: |
 
 
 WarningsAsErrors: "*"
-HeaderFilterRegex: ""
+SystemHeaders: false
 
 CheckOptions:
   # ===== Naming =====

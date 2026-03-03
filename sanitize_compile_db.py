@@ -6,8 +6,10 @@ Sanitize CMake's compile_commands.json for running clang-tidy on ESP-IDF project
 - Replace compiler with clang/clang++ (analysis only) and add -fsyntax-only.
 - Set parsing target: riscv32 for ESP32-C3/H2; fake host target + __XTENSA__ for Xtensa.
 - Detect the real cross-GCC used by CMake (xtensa-…-gcc or riscv32-…-gcc),
-  derive --gcc-toolchain=<root> and --sysroot=<sysroot>, and inject them
-  into EVERY entry so clang-tidy needs no extra CLI flags.
+  derive --gcc-toolchain=<root>, --sysroot=<sysroot>, and explicit -I paths
+  for the GCC C++ headers (clang does not locate them automatically for
+  cross targets like riscv32-esp-elf), and inject them into EVERY entry so
+  clang-tidy needs no extra CLI flags.
 
 Usage:
   idf.py reconfigure
@@ -15,16 +17,18 @@ Usage:
   clang-tidy -p build/tidy <files...>
 """
 
-import json, os, shlex, sys, shutil, subprocess
+import json
+import shlex
+import shutil
+import subprocess
+import sys
 from pathlib import Path
 
 DROP_FLAGS_PREFIXES = [
     "-MMD",
     "-MP",
-    "-MF",
     "-fstrict-volatile-bitfields",
     "-fno-builtin",
-    "-Wl,",
     "-Wl",
     "-u",
     "-mlongcalls",
@@ -32,11 +36,10 @@ DROP_FLAGS_PREFIXES = [
     "-fno-tree-switch-conversion",
     "-fno-shrink-wrap",
 ]
-DROP_FLAGS_EXACT = set()
 
 
 def is_cpp(p):
-    return os.path.splitext(p)[1] in [
+    return Path(p).suffix in [
         ".cc",
         ".cpp",
         ".cxx",
@@ -79,7 +82,7 @@ def _tokens(entry):
 
 
 def resolve_toolchain_and_sysroot(cross_name):
-    """Return (toolchain_root_path_str, sysroot_path_str)."""
+    """Return (toolchain_root_path_str, sysroot_path_str, cxx_include_args)."""
     p = Path(cross_name)
     if not p.exists():
         which = shutil.which(cross_name)
@@ -95,7 +98,30 @@ def resolve_toolchain_and_sysroot(cross_name):
         raise RuntimeError(f"Failed to get sysroot via '{p} -print-sysroot'") from ex
     if not sysroot:
         raise RuntimeError("Empty sysroot detected")
-    return str(toolchain_root), sysroot
+
+    # Clang does not automatically locate GCC's C++ headers for cross targets
+    # (e.g. riscv32-esp-elf), so we detect them here and pass explicit -I flags.
+    cxx_includes = []
+    try:
+        gcc_version = subprocess.check_output(
+            [str(p), "-dumpversion"], text=True
+        ).strip()
+        # e.g. "riscv32-esp-elf-gcc" -> "riscv32-esp-elf"
+        target_triple = p.stem.rsplit("-", 1)[0]
+        cxx_base = toolchain_root / target_triple / "include" / "c++" / gcc_version
+        if cxx_base.is_dir():
+            cxx_includes.append(f"-I{cxx_base}")
+            # Architecture-specific subdirectory (e.g. bits/cpu_defines.h overrides)
+            cxx_target_sub = cxx_base / target_triple
+            if cxx_target_sub.is_dir():
+                cxx_includes.append(f"-I{cxx_target_sub}")
+    except Exception as exc:
+        print(
+            f"[sanitize] warning: could not detect C++ headers: {exc}",
+            file=sys.stderr,
+        )
+
+    return str(toolchain_root), sysroot, cxx_includes
 
 
 def sanitize_entry(e, extra_args):
@@ -110,9 +136,6 @@ def sanitize_entry(e, extra_args):
     i = 1
     while i < len(argv):
         a = argv[i]
-        if a in DROP_FLAGS_EXACT:
-            i += 1
-            continue
         if any(a.startswith(p) for p in DROP_FLAGS_PREFIXES):
             i += 1
             continue
@@ -155,11 +178,11 @@ def main(src, dst):
             "ERROR: cannot detect cross-compiler (xtensa/riscv gcc) from compile_commands.json"
         )
 
-    toolchain_root, sysroot = resolve_toolchain_and_sysroot(cross)
+    toolchain_root, sysroot, cxx_includes = resolve_toolchain_and_sysroot(cross)
     extra = [
         f"--gcc-toolchain={toolchain_root}",
         f"--sysroot={sysroot}",
-    ]
+    ] + cxx_includes
 
     out = []
     for ent in db:

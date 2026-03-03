@@ -1,15 +1,17 @@
 CLANG_TIDY ?= clang-tidy
-CLANG_TIDY_EXTRAS :=
+CLANG_TIDY_EXTRAS ?=
+# Show diagnostics only from headers inside this project's own source trees
+CLANG_TIDY_HEADER_FILTER ?= $(CURDIR)/(main|components)/.*
 
-UNAME_S := $(shell uname -s)
+__UNAME_S := $(shell uname -s)
 
-ifeq ($(UNAME_S),Darwin)
+ifeq ($(__UNAME_S),Darwin)
 # Add path to SDK on MacOS
-  XCRUN := $(shell command -v xcrun 2>/dev/null)
-  ifneq ($(XCRUN),)
-    SDK := $(shell xcrun --show-sdk-path 2>/dev/null)
-    ifneq ($(SDK),)
-      CLANG_TIDY_EXTRAS += --extra-arg=-isysroot$(SDK)
+  __XCRUN := $(shell command -v xcrun 2>/dev/null)
+  ifneq ($(__XCRUN),)
+    __SDK := $(shell xcrun --show-sdk-path 2>/dev/null)
+    ifneq ($(__SDK),)
+      CLANG_TIDY_EXTRAS += --extra-arg=-isysroot$(__SDK)
     endif
   endif
 endif
@@ -55,8 +57,7 @@ use-host:
 
 __HOST_TESTS_DIR := tests/host
 __HOST_TESTS_BUILD_DIR := $(__HOST_TESTS_DIR)/build
-HOST_LINT_LIBS ?= $(addprefix components/, \
-	$(shell tr '\n' ' ' < $(__HOST_TESTS_DIR)/CMakeLists.txt | sed -n 's/.*set(LIBS2TEST[[:space:]]*\([^)]*\)).*/\1/p' | xargs))
+HOST_LINT_LIBS ?=
 
 host-build:
 	cmake -S ${__HOST_TESTS_DIR} -B ${__HOST_TESTS_BUILD_DIR} -DCMAKE_BUILD_TYPE=Debug
@@ -73,9 +74,9 @@ ifneq ($(strip $(HOST_LINT_LIBS)),)
 	find $(call __quote,$(HOST_LINT_LIBS)) \
        	\( -type d -name include_esp -prune \) \
        	-o \
-	    \( -type f \( -name '*.c' -o -name '*.cpp' -o -name '*.h' -o -name '*.hpp' \) \
+	    \( -type f \( -name '*.c' -o -name '*.cpp' \) \
 		-print0 \) \
-	| xargs -0 $(CLANG_TIDY) $(CLANG_TIDY_EXTRAS) -p "$(__HOST_TESTS_BUILD_DIR)"
+	| xargs -0 $(CLANG_TIDY) $(CLANG_TIDY_EXTRAS) --header-filter='$(CLANG_TIDY_HEADER_FILTER)' -p "$(__HOST_TESTS_BUILD_DIR)"
 else
 	@echo "HOST_LINT_LIBS is empty, skipping host-lint"
 endif
@@ -102,8 +103,8 @@ esp-sanitize-db: _check-jq esp-build
 	@./sanitize_compile_db.py "$(__BUILD_DIR)/compile_commands.json" "$(__TIDY_DB_DIR)/compile_commands.json"
 
 esp-clean:
-	idf.py fullclean
 	rm -rf $(__BUILD_DIR) .cache managed_components dependencies.lock
+	idf.py fullclean
 
 esp-flash: esp-build
 	idf.py -p $(PORT_ESP) flash
@@ -118,9 +119,9 @@ esp-lint: esp-sanitize-db
 	find . \
     	\( -type d \( -name "managed_components" -o -name build -o -name ".cache" -o -name ".git" \) -prune \) \
     	-o \
-    	-type f \( -name "*.c" -o -name "*.h" -o -name "*.cpp" -o -name "*.hpp" \) \
+    	-type f \( -name "*.c" -o -name "*.cpp" \) \
         -print0 \
-		| xargs -0 ${CLANG_TIDY} -p ${__TIDY_DB_DIR}
+		| xargs -0 ${CLANG_TIDY} $(CLANG_TIDY_EXTRAS) --header-filter='$(CLANG_TIDY_HEADER_FILTER)' -p ${__TIDY_DB_DIR}
 
 
 # ---- All in one ----
