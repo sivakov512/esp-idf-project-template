@@ -69,7 +69,7 @@ make esp-flashm        # flash + open serial monitor
 │       ├── cmake/
 │       │   └── AddUnityTest.cmake
 │       └── CMakeLists.txt
-├── .clang-format               # LLVM-based style, 100 col limit, 2-space indent
+├── .clang-format               # LLVM-based style, 85 col limit, 2-space indent
 ├── .clang-tidy                 # Static analysis rules, all warnings as errors
 ├── .clangd                     # LSP config — strips GCC flags for IDE compatibility
 ├── sanitize_compile_db.py      # Patches IDF's compile_commands.json for clang-tidy
@@ -202,7 +202,7 @@ Enable the `host-checks.yml` workflow once you have tests to run.
 
 Based on **LLVM style** with project tweaks:
 
-- 2-space indentation, 100-column limit
+- 2-space indentation, 85-column limit
 - Tabs → spaces
 - Braces: `Attach`
 - Sorted includes, blocks preserved
