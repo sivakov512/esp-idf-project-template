@@ -35,6 +35,7 @@ DROP_FLAGS_PREFIXES = [
     "-mfix-esp32-psram-cache-issue",
     "-fno-tree-switch-conversion",
     "-fno-shrink-wrap",
+    "-mdisable-hardware-atomics",
 ]
 
 
@@ -182,6 +183,7 @@ def main(src, dst):
     extra = [
         f"--gcc-toolchain={toolchain_root}",
         f"--sysroot={sysroot}",
+        "-Wno-extern-c-compat",
     ] + cxx_includes
 
     out = []
