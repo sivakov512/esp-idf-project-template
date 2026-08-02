@@ -8,7 +8,9 @@
   ],
   "ignorePaths": ["**/managed_components/**", "**/vendor/**"],
   "github-actions": {
-    "fileMatch": ["(^|/)\\.github/disabled_workflows/[^/]+\\.ya?ml$"]
+    "managerFilePatterns": [
+      "/(^|/)\\.github/disabled_workflows/[^/]+\\.ya?ml$/"
+    ]
   },
   "packageRules": [
     {
@@ -22,7 +24,9 @@
     {
       "customType": "regex",
       "description": "CMake FetchContent dependencies in host tests",
-      "fileMatch": ["(^|/)tests/host/CMakeLists\\.txt$"],
+      "managerFilePatterns": [
+        "/(^|/)tests/host/CMakeLists\\.txt$/"
+      ],
       "matchStrings": [
         "FetchContent_Declare\\s*\\(\\s*\\w+\\s+GIT_REPOSITORY\\s+https://github\\.com/(?<depName>[^\\s]+?)(?:\\.git)?\\s+GIT_TAG\\s+(?<currentValue>\\S+)"
       ],
@@ -31,7 +35,9 @@
     {
       "customType": "regex",
       "description": "ESP-IDF component manager dependencies",
-      "fileMatch": ["(^|/)idf_component\\.yml$"],
+      "managerFilePatterns": [
+        "/(^|/)idf_component\\.yml$/"
+      ],
       "matchStrings": [
         "git:\\s+https://github\\.com/(?<depName>[^\\s]+?)(?:\\.git)?\\s+version:\\s*\"(?<currentValue>[^\"]+)\""
       ],
