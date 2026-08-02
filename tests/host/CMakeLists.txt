@@ -25,7 +25,7 @@ endif()
 FetchContent_Declare(
     embedlibs
     GIT_REPOSITORY https://github.com/sivakov512/embedlibs.git
-    GIT_TAG        v2.0.0
+    GIT_TAG        v2.1.0
 )
 FetchContent_MakeAvailable(embedlibs)
 
