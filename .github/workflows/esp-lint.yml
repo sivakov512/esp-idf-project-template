@@ -60,7 +60,7 @@ jobs:
           echo "BASH_ENV=$GITHUB_WORKSPACE/.bash_env_ci" >> "$GITHUB_ENV"
 
       - name: Cache build artefacts
-        uses: actions/cache@v3
+        uses: actions/cache@v6
         with:
           path: |
             .cache
