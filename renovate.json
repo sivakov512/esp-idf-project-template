@@ -1,0 +1,41 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended"],
+  "labels": ["dependencies"],
+  "description": [
+    "ignorePaths is overridden because config:recommended ignores **/tests/** by default, which hides tests/host/CMakeLists.txt from the custom manager below",
+    "github-actions fileMatch is extended so that .github/disabled_workflows is scanned too"
+  ],
+  "ignorePaths": ["**/managed_components/**", "**/vendor/**"],
+  "github-actions": {
+    "fileMatch": ["(^|/)\\.github/disabled_workflows/[^/]+\\.ya?ml$"]
+  },
+  "packageRules": [
+    {
+      "description": "Own images use non-semver tags, bump them by hand",
+      "matchDatasources": ["docker"],
+      "matchPackageNames": ["ghcr.io/sivakov512/**"],
+      "enabled": false
+    }
+  ],
+  "customManagers": [
+    {
+      "customType": "regex",
+      "description": "CMake FetchContent dependencies in host tests",
+      "fileMatch": ["(^|/)tests/host/CMakeLists\\.txt$"],
+      "matchStrings": [
+        "FetchContent_Declare\\s*\\(\\s*\\w+\\s+GIT_REPOSITORY\\s+https://github\\.com/(?<depName>[^\\s]+?)(?:\\.git)?\\s+GIT_TAG\\s+(?<currentValue>\\S+)"
+      ],
+      "datasourceTemplate": "github-tags"
+    },
+    {
+      "customType": "regex",
+      "description": "ESP-IDF component manager dependencies",
+      "fileMatch": ["(^|/)idf_component\\.yml$"],
+      "matchStrings": [
+        "git:\\s+https://github\\.com/(?<depName>[^\\s]+?)(?:\\.git)?\\s+version:\\s*\"(?<currentValue>[^\"]+)\""
+      ],
+      "datasourceTemplate": "github-tags"
+    }
+  ]
+}
