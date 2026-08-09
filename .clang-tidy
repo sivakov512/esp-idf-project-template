@@ -127,6 +127,11 @@ CheckOptions:
     value: "false"
 
   # ===== Modernize / Perf =====
+  # C headers are parsed as C++ when included from a .cpp translation unit;
+  # extern "C" only changes linkage, not the dialect. Without this, every
+  # typedef in a C-compatible header trips the check.
+  - key: modernize-use-using.IgnoreExternC
+    value: "true"
   - key: modernize-use-override.IgnoreDestructors
     value: "true"
   - key: modernize-use-nullptr.NullMacros
