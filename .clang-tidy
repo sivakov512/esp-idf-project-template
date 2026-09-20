@@ -49,10 +49,8 @@ CheckOptions:
     value: lower_case
   - key: readability-identifier-naming.ClassMemberSuffix
     value: "_"
-  - key: readability-identifier-naming.MemberCase@C++
+  - key: readability-identifier-naming.MemberCase
     value: lower_case
-  - key: readability-identifier-naming.MemberSuffix@C++
-    value: "_"
   - key: readability-identifier-naming.PrivateMemberCase
     value: lower_case
   - key: readability-identifier-naming.PrivateMemberSuffix
@@ -85,18 +83,14 @@ CheckOptions:
     value: "TAG|IRAM_ATTR"
 
   # structs / typedefs
-  - key: readability-identifier-naming.StructCase@C
+  - key: readability-identifier-naming.StructCase
     value: lower_case
-  - key: readability-identifier-naming.StructSuffix@C
+  - key: readability-identifier-naming.StructSuffix
     value: "_t"
-  - key: readability-identifier-naming.StructCase@C++
-    value: CamelCase
   - key: readability-identifier-naming.TypedefCase
     value: lower_case
   - key: readability-identifier-naming.TypedefSuffix
     value: "_t"
-  - key: readability-identifier-naming.MemberCase@C
-    value: lower_case
 
   # C++ type aliases (using)
   - key: readability-identifier-naming.TypeAliasCase
@@ -111,6 +105,8 @@ CheckOptions:
     value: UPPER_CASE
 
   # Constants outside classes (C/C++)
+  - key: readability-identifier-naming.LocalConstantCase
+    value: lower_case
   - key: readability-identifier-naming.ConstantCase
     value: UPPER_CASE
 
@@ -121,10 +117,6 @@ CheckOptions:
   # ===== Google tweaks =====
   - key: google-readability-braces-around-statements.ShortStatementLines
     value: "1"
-  - key: google-runtime-int.IncludeStyle
-    value: "uint16"
-  - key: google-explicit-constructor.StrictMode
-    value: "false"
 
   # ===== Modernize / Perf =====
   # C headers are parsed as C++ when included from a .cpp translation unit;
