@@ -211,6 +211,8 @@ Based on **LLVM style** with project tweaks:
 
 Checks enabled: `clang-diagnostic-*`, `clang-analyzer-*`, `bugprone-*`, `performance-*`, `portability-*`, `modernize-*`, `readability-*`, `misc-*`, plus select `google-*` rules. **All warnings are treated as errors.**
 
+Headers use include guards (`#ifndef APP_H` / `#define APP_H`), not `#pragma once`: clang-tidy 21+ rejects it with `portability-avoid-pragma-once` (clang-tidy 19 in CI does not have this check yet).
+
 **Naming conventions:**
 
 | Context | Convention | Example |
