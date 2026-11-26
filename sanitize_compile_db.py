@@ -2,14 +2,17 @@
 """
 Sanitize CMake's compile_commands.json for running clang-tidy on ESP-IDF projects.
 
+- Expand GCC response files (ESP-IDF v6 keeps toolchain flags such as
+  -mlongcalls and -specs=picolibc.specs in build/toolchain/cflags).
 - Drop GCC/ld-specific flags that confuse libclang.
 - Replace compiler with clang/clang++ (analysis only) and add -fsyntax-only.
 - Set parsing target: riscv32 for ESP32-C3/H2; fake host target + __XTENSA__ for Xtensa.
-- Detect the real cross-GCC used by CMake (xtensa-…-gcc or riscv32-…-gcc),
-  derive --gcc-toolchain=<root>, --sysroot=<sysroot>, and explicit -I paths
-  for the GCC C++ headers (clang does not locate them automatically for
-  cross targets like riscv32-esp-elf), and inject them into EVERY entry so
-  clang-tidy needs no extra CLI flags.
+- Ask the real cross-GCC used by CMake (xtensa-…-gcc or riscv32-…-gcc) for its
+  system include directories, with the same -specs/-m flags the build uses,
+  and pass exactly those to clang via -nostdlibinc + -isystem. This picks the
+  right C library headers whether the project uses picolibc (ESP-IDF v6
+  default) or newlib (ESP-IDF v5.x), plus the libstdc++ headers for the
+  selected multilib, so clang-tidy needs no extra CLI flags.
 
 Usage:
   idf.py reconfigure
@@ -19,7 +22,6 @@ Usage:
 
 import json
 import shlex
-import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -36,7 +38,16 @@ DROP_FLAGS_PREFIXES = [
     "-fno-tree-switch-conversion",
     "-fno-shrink-wrap",
     "-mdisable-hardware-atomics",
+    "-mtune=",
+    "-specs=",
+    "--specs=",
+    "-fno-malloc-dce",
+    "-fzero-init-padding-bits",
+    "-Wno-old-style-declaration",
 ]
+
+# Flags that change which system headers GCC uses (spec files, multilib).
+INCLUDE_AFFECTING_PREFIXES = ("-specs=", "--specs=", "-m", "--sysroot", "-isysroot")
 
 
 def is_cpp(p):
@@ -60,19 +71,8 @@ def guess_family(argv):
     return "host"
 
 
-def find_cross_from_db(db):
-    """Find token like xtensa-…-(gcc|g++) or riscv32-…-(gcc|g++) from the JSON DB."""
-    # Prefer first entry, but scan all if needed
-    entries = db if isinstance(db, list) else []
-    for e in [entries[0]] if entries else []:
-        for tok in _tokens(e):
-            if (tok.endswith(("gcc", "g++"))) and ("xtensa" in tok or "riscv" in tok):
-                return tok
-    for e in entries:
-        for tok in _tokens(e):
-            if (tok.endswith(("gcc", "g++"))) and ("xtensa" in tok or "riscv" in tok):
-                return tok
-    return None
+def is_cross_gcc(tok):
+    return tok.endswith(("gcc", "g++")) and ("xtensa" in tok or "riscv" in tok)
 
 
 def _tokens(entry):
@@ -82,56 +82,77 @@ def _tokens(entry):
     return list(cmd or [])
 
 
-def resolve_toolchain_and_sysroot(cross_name):
-    """Return (toolchain_root_path_str, sysroot_path_str, cxx_include_args)."""
-    p = Path(cross_name)
-    if not p.exists():
-        which = shutil.which(cross_name)
-        if not which:
-            raise RuntimeError(
-                f"Cross-compiler not found on PATH: {cross_name}. Did you source IDF export.sh?"
-            )
-        p = Path(which)
-    toolchain_root = p.parent.parent  # .../bin -> root
+def expand_response_files(argv, cwd, depth=0):
+    """Inline @file arguments the way GCC does, relative to the entry's directory."""
+    out = []
+    for a in argv:
+        if a.startswith("@") and depth < 10:
+            p = Path(a[1:])
+            if not p.is_absolute():
+                p = Path(cwd) / p
+            if p.is_file():
+                out += expand_response_files(shlex.split(p.read_text()), cwd, depth + 1)
+                continue
+        out.append(a)
+    return out
+
+
+_include_cache = {}
+
+
+def gcc_system_includes(compiler, lang, flags, cwd):
+    """Return GCC's <...> include search list for these flags, minus GCC's own
+    builtin headers (clang uses its resource dir for stddef.h, stdarg.h, ...)."""
+    key = (compiler, lang, tuple(flags), cwd)
+    if key in _include_cache:
+        return _include_cache[key]
+
+    cmd = [compiler, *flags, "-x", lang, "-E", "-Wp,-v", "-o", "/dev/null", "/dev/null"]
     try:
-        sysroot = subprocess.check_output([str(p), "-print-sysroot"], text=True).strip()
+        res = subprocess.run(cmd, cwd=cwd, capture_output=True, text=True, check=True)
+    except FileNotFoundError as ex:
+        raise SystemExit(
+            f"ERROR: cross-compiler not found: {compiler}. Did you source IDF export.sh?"
+        ) from ex
     except subprocess.CalledProcessError as ex:
-        raise RuntimeError(f"Failed to get sysroot via '{p} -print-sysroot'") from ex
-    if not sysroot:
-        raise RuntimeError("Empty sysroot detected")
+        raise SystemExit(
+            f"ERROR: '{shlex.join(cmd)}' failed:\n{ex.stderr}"
+        ) from ex
 
-    # Clang does not automatically locate GCC's C++ headers for cross targets
-    # (e.g. riscv32-esp-elf), so we detect them here and pass explicit -I flags.
-    cxx_includes = []
-    try:
-        gcc_version = subprocess.check_output(
-            [str(p), "-dumpversion"], text=True
-        ).strip()
-        # e.g. "riscv32-esp-elf-gcc" -> "riscv32-esp-elf"
-        target_triple = p.stem.rsplit("-", 1)[0]
-        cxx_base = toolchain_root / target_triple / "include" / "c++" / gcc_version
-        if cxx_base.is_dir():
-            cxx_includes.append(f"-I{cxx_base}")
-            # Architecture-specific subdirectory (e.g. bits/cpu_defines.h overrides)
-            cxx_target_sub = cxx_base / target_triple
-            if cxx_target_sub.is_dir():
-                cxx_includes.append(f"-I{cxx_target_sub}")
-    except Exception as exc:
-        print(
-            f"[sanitize] warning: could not detect C++ headers: {exc}",
-            file=sys.stderr,
-        )
+    dirs = []
+    in_list = False
+    for line in res.stderr.splitlines():
+        if line.startswith("#include <...> search starts here:"):
+            in_list = True
+            continue
+        if line.startswith("End of search list."):
+            break
+        if in_list and line.startswith(" "):
+            d = Path(line.strip()).resolve()
+            # lib/gcc/<triple>/<version>/include{,-fixed}: GCC's freestanding headers
+            if "lib/gcc" in d.as_posix() and d.name in ("include", "include-fixed"):
+                continue
+            dirs.append(str(d))
 
-    return str(toolchain_root), sysroot, cxx_includes
+    if not dirs:
+        raise SystemExit(f"ERROR: no system include dirs reported by '{shlex.join(cmd)}'")
+
+    _include_cache[key] = dirs
+    return dirs
 
 
-def sanitize_entry(e, extra_args):
+def sanitize_entry(e):
     src = e.get("file")
+    cwd = e.get("directory", ".")
     argv = _tokens(e)
+    if not argv or not is_cross_gcc(argv[0]):
+        raise ValueError("not built with the ESP cross-compiler")
+    argv = [argv[0]] + expand_response_files(argv[1:], cwd)
 
     fam = guess_family(argv)
+    cpp = is_cpp(src)
     # use clang front-end
-    compiler = "clang++" if is_cpp(src) else "clang"
+    compiler = "clang++" if cpp else "clang"
     cleaned = [compiler]
 
     i = 1
@@ -162,8 +183,12 @@ def sanitize_entry(e, extra_args):
     if "-fsyntax-only" not in cleaned:
         cleaned.append("-fsyntax-only")
 
-    # inject toolchain hints
-    cleaned += extra_args
+    # system headers exactly as the cross-GCC sees them
+    query_flags = [a for a in argv[1:] if a.startswith(INCLUDE_AFFECTING_PREFIXES)]
+    includes = gcc_system_includes(argv[0], "c++" if cpp else "c", query_flags, cwd)
+    cleaned += ["-nostdlibinc", "-Wno-extern-c-compat"]
+    for d in includes:
+        cleaned += ["-isystem", d]
 
     out = dict(e)
     out["arguments"] = cleaned
@@ -173,24 +198,16 @@ def sanitize_entry(e, extra_args):
 
 def main(src, dst):
     db = json.loads(Path(src).read_text())
-    cross = find_cross_from_db(db)
-    if not cross:
+    if not any(is_cross_gcc(t) for e in db for t in _tokens(e)[:1]):
         raise SystemExit(
             "ERROR: cannot detect cross-compiler (xtensa/riscv gcc) from compile_commands.json"
         )
 
-    toolchain_root, sysroot, cxx_includes = resolve_toolchain_and_sysroot(cross)
-    extra = [
-        f"--gcc-toolchain={toolchain_root}",
-        f"--sysroot={sysroot}",
-        "-Wno-extern-c-compat",
-    ] + cxx_includes
-
     out = []
     for ent in db:
         try:
-            out.append(sanitize_entry(ent, extra))
-        except Exception as ex:
+            out.append(sanitize_entry(ent))
+        except ValueError as ex:
             print(f"[sanitize] skip {ent.get('file')}: {ex}", file=sys.stderr)
     Path(dst).write_text(json.dumps(out, indent=2))
     print(f"Sanitized -> {dst} ({len(out)} entries)")
