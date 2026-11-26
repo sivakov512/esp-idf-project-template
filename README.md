@@ -7,7 +7,7 @@ An ESP-IDF project base with clang-tidy, clangd, and CI pre-configured, host-sid
 
 ## What's included
 
-- **clang-format, clang-tidy, and clangd work out of the box** — [`sanitize_compile_db.py`](sanitize_compile_db.py) strips GCC-specific flags from ESP-IDF's `compile_commands.json` and injects the correct toolchain/sysroot; works on both Xtensa and RISC-V targets
+- **clang-format, clang-tidy, and clangd work out of the box** — [`sanitize_compile_db.py`](sanitize_compile_db.py) strips GCC-specific flags from ESP-IDF's `compile_commands.json` and points clang at the same system headers the cross-GCC uses (picolibc or newlib); works on both Xtensa and RISC-V targets
 - **CI pre-configured** — GitHub Actions for static analysis and formatting; auto-selects the correct Docker image when Matter is enabled
 - **Host-side unit tests** — [Unity](https://github.com/ThrowTheSwitch/Unity) via CMake `FetchContent`; test business logic without hardware
 - **App structure** — `main/` entry point + `components/app/` business logic, ready to expand
@@ -19,7 +19,7 @@ An ESP-IDF project base with clang-tidy, clangd, and CI pre-configured, host-sid
 
 | Tool | Version | Notes |
 |------|---------|-------|
-| [ESP-IDF](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/get-started/) | v5.4+ | Required |
+| [ESP-IDF](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/get-started/) | v6.1+ | Required; CI uses v6.1.1. v5.4+ should still work but is not tested |
 | CMake | 3.16+ | For host tests |
 | clang-format / clang-tidy / clangd | 18+ | Recommended |
 | [ESP-Matter](https://docs.espressif.com/projects/esp-matter/en/latest/esp32/developing.html) | release_v1.5+ | Optional |
@@ -190,7 +190,7 @@ Enable the `host-checks.yml` workflow once you have tests to run.
    make esp-build
    ```
 
-**C++ standard:** ESP-IDF defaults to GNU C++23 (`-std=gnu++2b`). When Matter is enabled, Matter/CHIP components are compiled with `-std=gnu++17 -w` to avoid C++23 incompatibilities in upstream connectedhomeip; your code stays on C++23.
+**C++ standard:** ESP-IDF v6 defaults to GNU C++26 (`-std=gnu++26`). When Matter is enabled, Matter/CHIP components are compiled with `-std=gnu++17 -w` to avoid incompatibilities with newer standards in upstream connectedhomeip; your code stays on the IDF default.
 
 **CI:** The `esp-lint` workflow auto-detects `ESP_MATTER_ENABLED` and selects the correct Docker image — `ghcr.io/sivakov512/esp-idf` for plain builds or `ghcr.io/sivakov512/esp-matter` when Matter is active.
 
