@@ -1,4 +1,5 @@
-#pragma once
+#ifndef APP_H
+#define APP_H
 
 #include <embedlibs/sugar.h>
 #include <esp_err.h>
@@ -12,3 +13,5 @@ esp_err_t app_init(app_ctx_t *ctx);
 esp_err_t app_run(app_ctx_t *ctx);
 
 EXTERN_C_END
+
+#endif // APP_H
