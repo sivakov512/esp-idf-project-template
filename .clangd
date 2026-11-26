@@ -21,4 +21,4 @@ If:
   PathMatch: .*\.cpp$
 CompileFlags:
   Add:
-    - -std=gnu++23
+    - -std=gnu++26

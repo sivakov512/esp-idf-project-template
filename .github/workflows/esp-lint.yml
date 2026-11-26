@@ -7,7 +7,7 @@ on:
     branches: [main]
 
 env:
-  IMAGE_DEFAULT: ghcr.io/sivakov512/esp-idf:v5.5.3-llvm19
+  IMAGE_DEFAULT: ghcr.io/sivakov512/esp-idf:v6.1.1-llvm19
   IMAGE_MATTER: ghcr.io/sivakov512/esp-matter:release_v1.5-idf_v5.5.3-llvm19
 
 jobs:
