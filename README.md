@@ -7,7 +7,7 @@ An ESP-IDF project base with clang-tidy, clangd, and CI pre-configured, host-sid
 
 ## What's included
 
-- **clang-format, clang-tidy, and clangd work out of the box** — [`sanitize_compile_db.py`](sanitize_compile_db.py) strips GCC-specific flags from ESP-IDF's `compile_commands.json` and points clang at the same system headers the cross-GCC uses (picolibc or newlib); works on both Xtensa and RISC-V targets
+- **clang-format, clang-tidy, and clangd work out of the box, the same everywhere** — the editor, `make` and CI all use Espressif LLVM 21 (esp-clang / esp-clangd from ESP-IDF). [`sanitize_compile_db.py`](sanitize_compile_db.py) turns ESP-IDF's `compile_commands.json` into one clang understands: real Xtensa / RISC-V target, GCC-only flags dropped, the same system headers the cross-GCC uses (picolibc or newlib)
 - **CI pre-configured** — GitHub Actions for static analysis and formatting; auto-selects the correct Docker image when Matter is enabled
 - **Host-side unit tests** — [Unity](https://github.com/ThrowTheSwitch/Unity) via CMake `FetchContent`; test business logic without hardware
 - **App structure** — `main/` entry point + `components/app/` business logic, ready to expand
@@ -19,10 +19,10 @@ An ESP-IDF project base with clang-tidy, clangd, and CI pre-configured, host-sid
 
 | Tool | Version | Notes |
 |------|---------|-------|
-| [ESP-IDF](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/get-started/) | v6.1+ | Required; CI uses v6.1.1. v5.4+ should still work but is not tested |
+| [ESP-IDF](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/get-started/) | v6.1+ | Required; CI uses v6.1.1 |
 | CMake | 3.16+ | For host tests |
-| clang-format / clang-tidy / clangd | 18+ | Recommended |
-| [ESP-Matter](https://docs.espressif.com/projects/esp-matter/en/latest/esp32/developing.html) | release_v1.5+ | Optional |
+| esp-clang | as listed by ESP-IDF (21.1.3 for v6.1.1) | Required for lint and formatting: `python $IDF_PATH/tools/idf_tools.py install esp-clang`. esp-clangd comes with ESP-IDF |
+| [ESP-Matter](https://docs.espressif.com/projects/esp-matter/en/latest/esp32/developing.html) | release/v1.6.1+ | Optional; on ESP-IDF v6.0.2, as esp-matter recommends |
 
 ---
 
@@ -71,8 +71,8 @@ make esp-flashm        # flash + open serial monitor
 │       └── CMakeLists.txt
 ├── .clang-format               # LLVM-based style, 85 col limit, 4-space indent
 ├── .clang-tidy                 # Static analysis rules, all warnings as errors
-├── .clangd                     # LSP config — strips GCC flags for IDE compatibility
-├── sanitize_compile_db.py      # Patches IDF's compile_commands.json for clang-tidy
+├── .clangd                     # Makes clangd use the prepared database for every file
+├── sanitize_compile_db.py      # Prepares compile_commands.json for esp-clang / esp-clangd
 ├── sdkconfig.defaults          # IDF defaults (partition table hints)
 ├── CMakeLists.txt              # Top-level build
 └── Makefile                    # Convenience targets for all common workflows
@@ -100,7 +100,7 @@ Dependencies pulled via IDF component manager (`main/idf_component.yml`):
 | `esp-flashm` | Flash and open serial monitor |
 | `esp-monitor` | Open serial monitor only |
 | `esp-lint` | Run clang-tidy on ESP sources |
-| `esp-sanitize-db` | Patch `build/compile_commands.json` → `build/tidy/compile_commands.json` (called by `esp-lint`) |
+| `esp-sanitize-db` | Prepare `build/compile_commands.json` → `build/tidy/compile_commands.json` (called by `esp-lint` and `use-esp`) |
 | `esp-menuconfig` | Open IDF menuconfig |
 | `esp-clean` | Full clean (build artifacts, managed components, cache) |
 
@@ -129,21 +129,32 @@ Override the default serial port: `make esp-flash PORT_ESP=/dev/ttyUSB0`
 
 | Target | Description |
 |--------|-------------|
-| `use-esp` | Symlink `compile_commands.json` → ESP build DB |
-| `use-host` | Symlink `compile_commands.json` → host test build DB |
+| `use-esp` | Prepare the ESP database and symlink `compile_commands.json` to it |
+| `use-host` | Prepare the host test database and symlink `compile_commands.json` to it |
+| `zed` | Write `.zed/settings.json` for this machine: Zed uses esp-clangd, format on save |
 
 ---
 
-## clangd / IDE Integration
+## Editor Integration (clangd)
 
-The `.clangd` config strips ESP-IDF's GCC-specific flags (`-mlongcalls`, `-mcpu=*`, `-march=*`, etc.) so that clangd works correctly in VS Code, CLion, Neovim, and any other LSP-capable editor.
+All checks use one toolchain, Espressif LLVM from ESP-IDF: `make` and CI run esp-clang's `clang-tidy` and `clang-format`, the editor runs esp-clangd. Diagnostics, `.clang-tidy` checks and formatting are the same in all three. The only difference: clangd does not run the slow `clang-analyzer-*` checks, so those show up in `make esp-lint` and CI only.
 
-Switch `compile_commands.json` between build targets:
+Upstream clangd cannot parse code for Xtensa, so the editor must use esp-clangd. It comes with ESP-IDF and is on `PATH` after the export script.
+
+`compile_commands.json` in the project root points at a prepared database (see [`sanitize_compile_db.py`](sanitize_compile_db.py)); `.clangd` makes clangd use it for every file. Switch it between the ESP firmware and the host tests:
 
 ```bash
-make use-esp    # point clangd at the ESP build DB
-make use-host   # point clangd at the host test build DB
+make use-esp    # ESP build (default)
+make use-host   # host tests
 ```
+
+### Zed
+
+```bash
+make zed
+```
+
+writes `.zed/settings.json` for this project only: clangd is esp-clangd (by absolute path, as Zed requires, so the file is machine-specific and git-ignored), with `--clang-tidy`, and C/C++ are formatted on save through clangd. Your global Zed settings stay as they are. Run it again after upgrading ESP-IDF.
 
 ---
 
@@ -192,7 +203,7 @@ Enable the `host-checks.yml` workflow once you have tests to run.
 
 **C++ standard:** ESP-IDF v6 defaults to GNU C++26 (`-std=gnu++26`). When Matter is enabled, Matter/CHIP components are compiled with `-std=gnu++17 -w` to avoid incompatibilities with newer standards in upstream connectedhomeip; your code stays on the IDF default.
 
-**CI:** The `esp-lint` workflow auto-detects `ESP_MATTER_ENABLED` and selects the correct Docker image — `ghcr.io/sivakov512/esp-idf` for plain builds or `ghcr.io/sivakov512/esp-matter` when Matter is active.
+**CI:** The `esp-lint` workflow auto-detects `ESP_MATTER_ENABLED` and selects the correct Docker image — `ghcr.io/sivakov512/esp-idf` for plain builds or `ghcr.io/sivakov512/esp-matter` (ESP-Matter release/v1.6.1 on ESP-IDF v6.0.2) when Matter is active. Both images carry the same esp-clang.
 
 ---
 
@@ -211,7 +222,7 @@ Based on **LLVM style** with project tweaks:
 
 Checks enabled: `clang-diagnostic-*`, `clang-analyzer-*`, `bugprone-*`, `performance-*`, `portability-*`, `modernize-*`, `readability-*`, `misc-*`, plus select `google-*` rules. **All warnings are treated as errors.**
 
-Headers use include guards (`#ifndef APP_H` / `#define APP_H`), not `#pragma once`: clang-tidy 21+ rejects it with `portability-avoid-pragma-once` (clang-tidy 19 in CI does not have this check yet).
+Headers use include guards (`#ifndef APP_H` / `#define APP_H`), not `#pragma once`: clang-tidy rejects it with `portability-avoid-pragma-once`.
 
 **Naming conventions:**
 
