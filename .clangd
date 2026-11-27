@@ -1,24 +1,4 @@
+# Use the prepared database from `make use-esp` / `make use-host` for every file,
+# including sources inside build directories that have their own raw database.
 CompileFlags:
-  Add:
-    - "-DIRAM_ATTR="
-    - "-DESP_PLATFORM"
-  Remove:
-    - -mlong-calls
-    - -mlongcalls
-    - -march=*
-    - -fno-shrink-wrap
-    - -fno-tree-switch-conversion
-    - -fstrict-volatile-bitfields
-    - -mcpu=*
-
-Diagnostics:
-  Suppress:
-    - pp_file_not_found
-    - drv_unknown_argument
-
----
-If:
-  PathMatch: .*\.cpp$
-CompileFlags:
-  Add:
-    - -std=gnu++26
+  CompilationDatabase: .
