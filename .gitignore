@@ -21,3 +21,6 @@ out/
 *.core
 *.dmp
 *.log
+
+# Editor settings written by `make zed` (machine-specific paths)
+.zed/settings.json
