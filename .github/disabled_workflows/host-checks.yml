@@ -10,11 +10,25 @@ jobs:
   test:
     runs-on: ubuntu-latest
     container:
-      image: ghcr.io/sivakov512/llvm:19
+      image: ghcr.io/sivakov512/esp-idf:v6.1.1
+    defaults:
+      run:
+        shell: bash
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v7
+
+      - name: Init ESP-IDF environment
+        run: |
+          cat > "$GITHUB_WORKSPACE/.bash_env_ci" <<'EOF'
+          # guard to avoid re-sourcing on every nested bash
+          if [ -z "${__ESP_IDF_SOURCED__:-}" ]; then
+            export __ESP_IDF_SOURCED__=1
+            source /opt/esp/entrypoint.sh
+          fi
+          EOF
+          echo "BASH_ENV=$GITHUB_WORKSPACE/.bash_env_ci" >> "$GITHUB_ENV"
 
       - name: Cache build artifacts
         uses: actions/cache@v6
@@ -30,11 +44,25 @@ jobs:
   lint:
     runs-on: ubuntu-latest
     container:
-      image: ghcr.io/sivakov512/llvm:19
+      image: ghcr.io/sivakov512/esp-idf:v6.1.1
+    defaults:
+      run:
+        shell: bash
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v7
+
+      - name: Init ESP-IDF environment
+        run: |
+          cat > "$GITHUB_WORKSPACE/.bash_env_ci" <<'EOF'
+          # guard to avoid re-sourcing on every nested bash
+          if [ -z "${__ESP_IDF_SOURCED__:-}" ]; then
+            export __ESP_IDF_SOURCED__=1
+            source /opt/esp/entrypoint.sh
+          fi
+          EOF
+          echo "BASH_ENV=$GITHUB_WORKSPACE/.bash_env_ci" >> "$GITHUB_ENV"
 
       - name: Cache build artifacts
         uses: actions/cache@v6

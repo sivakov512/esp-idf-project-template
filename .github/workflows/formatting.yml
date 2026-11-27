@@ -10,7 +10,7 @@ jobs:
   formatting:
     runs-on: ubuntu-latest
     container:
-      image: ghcr.io/sivakov512/llvm:19
+      image: ghcr.io/sivakov512/esp-idf:v6.1.1
 
     steps:
       - name: Checkout code
